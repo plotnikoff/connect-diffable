@@ -53,7 +53,7 @@ module.exports = function staticProvider(options){
                     if (err) {
                         return next();
                     }
-                    fs.readFile(diffableRoot + '/DeltaBootstrap.js', function (err, data) {
+                    fs.readFile(__dirname + '/resources/DeltaBootstrap.js', function (err, data) {
                         if (err) {
                             throw err;
                         }
@@ -79,7 +79,7 @@ module.exports = function staticProvider(options){
                     if (err) {
                         return next();
                     }
-                    fs.readFile(diffableRoot + '/JsDictionaryBootstrap.js', function (err, data) {
+                    fs.readFile(__dirname + '/resources/JsDictionaryBootstrap.js', function (err, data) {
                         if (err) {
                             throw err;
                         }
