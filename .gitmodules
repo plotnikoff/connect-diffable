@@ -1,0 +1,3 @@
+[submodule "vcdiff.js"]
+	path = vcdiff.js
+	url = git://github.com/plotnikoff/vcdiff.js.git
