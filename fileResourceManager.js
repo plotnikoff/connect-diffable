@@ -1,3 +1,5 @@
+/*global require, module*/
+
 var fs = require('fs'),
     crypto = require('crypto'),
     vcdiff = require('./vcdiff.js/vcdiff');
@@ -49,7 +51,6 @@ FileResourceManager.prototype = {
                 resourceHash = resourceDir.split('/').reverse()[0];
 
             that.resources[resolvedPath] = resourceHash;
-            console.log(that.resources)
             
             //create version file
             fs.writeFile(resourceDir + '/' + resourceName, data, function (err) {
@@ -58,8 +59,6 @@ FileResourceManager.prototype = {
                 }
                 that.currentVersion = resourceName;
                 that.versions[resourceHash] = resourceName.split('.')[0];
-                
-                console.log(that.versions);
                 
                 //read resource directory to fetch older versions of resource
                 fs.readdir(resourceDir, function (err, files) {
@@ -72,11 +71,11 @@ FileResourceManager.prototype = {
                     for (i = 0;i < len; i += 1) {
                         
                         //check that this is not current version and isn't a diff file
-                        if (files[i] !== that.currentVersion && files[i].split('.')[1] !== 'diff') {
+                        if (files[i] !== that.currentVersion && 
+                            files[i].split('.')[1] !== 'diff') {
                             (function (fileName) {
-                            
-                            //read older file with older version and generate diff file
-                            fs.readFile(resourceDir + '/' + fileName, 'utf8', 
+                                //read file with older version and generate diff file
+                                fs.readFile(resourceDir + '/' + fileName, 'utf8', 
                                 function (err, dictData) {
                                     var diff = vcd.encode(dictData.toString(), 
                                         data.toString()),
@@ -87,13 +86,14 @@ FileResourceManager.prototype = {
                                             if (err) {
                                                 throw err;
                                             }
-                                        })
+                                        }
+                                    );
                                 }
                             );
                             }(files[i]));
                         }
                     }
-                })
+                });
             });
         });
     }

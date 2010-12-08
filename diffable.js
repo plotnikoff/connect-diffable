@@ -1,8 +1,8 @@
-/*global module:true, require */
+/*global module, require */
 
 var fs = require('fs'),
     crypto = require('crypto'),
-    provider = require('./staticProvider'),
+    requestHandler = require('./requestHandler'),
     FileResourceManager = require('./fileResourceManager');
 
 module.exports = (function () {
@@ -11,17 +11,15 @@ module.exports = (function () {
     
     /**
      * @param {Object} config
-     * @cfg
-     * @cfg
      */
     diffable = function (config) {
         this.dir = fs.realpathSync(config.diffableDir);
         this.resourceDir = config.resourceDir;
-        this.provider = provider({
+        this.provider = requestHandler({
             'root': config.resourceDir,
             'frm': frm,
             'diffableRoot': this.dir
-        })
+        });
         that = this;
     };
     
@@ -39,7 +37,7 @@ module.exports = (function () {
             // md5 hash of resource's absolute path
             fs.mkdir(resourceDir, 0755, function (err) {
                 
-                //add first version of resource
+                //create first version of resource
                 frm.putResource(resolvedPath, resourceDir);
                 
                 //add callback to track file changes
