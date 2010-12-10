@@ -10,19 +10,29 @@ module.exports = (function () {
     frm = new FileResourceManager(),
     
     /**
+     * Instantiates diffable object
+     * @constructs
      * @param {Object} config
+     * @cfg {String} diffableDir Directory where delta and version files will 
+     * be stored
+     * @cfg {String} resourceDir Directory where static resources will be stored.
      */
     diffable = function (config) {
         this.dir = fs.realpathSync(config.diffableDir);
         this.resourceDir = config.resourceDir;
         this.provider = requestHandler({
-            'root': config.resourceDir,
+            'resourceDir': config.resourceDir,
             'frm': frm,
             'diffableRoot': this.dir
         });
         that = this;
     };
     
+    /**
+     * Method adds resources that should be served with diffable.
+     * @param {String} path Path to resource that should be served by diffable.
+     * Path is relative to <code>resourceDir</code>.
+     */
     diffable.prototype.watch = function (path) {
         //resolving absolute path to resource being tracked
         fs.realpath(this.resourceDir + path, function (err, resolvedPath) {
@@ -50,6 +60,13 @@ module.exports = (function () {
         });
     };
     
+    /**
+     * Connect stack interface, if request contains data that is relevant to 
+     * diffable this middleware will serve appropriate version and/or delta files.
+     * @param {Object} req
+     * @param {Object} res
+     * @param {Object} next
+     */
     diffable.prototype.serve = function (req, res, next) {
         that.provider(req, res, next);
     };

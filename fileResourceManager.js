@@ -5,7 +5,7 @@ var fs = require('fs'),
     vcdiff = require('./vcdiff.js/vcdiff');
 
 /**
- * 
+ * Class keeps track of resources and thier versions/deltas.
  */
 var FileResourceManager = function () {
     this.resources = {};
@@ -16,25 +16,26 @@ var FileResourceManager = function () {
 FileResourceManager.prototype = {
     
     /**
-     * 
-     * @param {Object} path
+     * Method returns resource path hash if resource is tracked by 
+     * FileResourceManager
+     * @param {String} path
      */
     getResourceHash : function (path) {
         return this.resources[path];
     },
     
     /**
-     * 
-     * @param {Object} resourceHash
+     * Method returns most recent version hash for given resource.
+     * @param {String} resourceHash
      */
     getVersionHash : function (resourceHash) {
         return this.versions[resourceHash];
     },
     
     /**
-     * 
-     * @param {Object} resolvedPath
-     * @param {Object} resourceDir
+     * Method is responsible for version and delta files createion.
+     * @param {String} resolvedPath
+     * @param {String} resourceDir
      */
     putResource : function (resolvedPath, resourceDir) {
         var that = this;

@@ -8,7 +8,7 @@ var fs = require('fs'),
     queryString = require('querystring'), that;
 
 /**
- * 
+ * Function sends response with aggresive caching
  * @param {Object} res
  * @param {Object} string
  */
@@ -25,12 +25,18 @@ function sendForCaching(res, str) {
     res.end(str);
 }
 
+/**
+ * @param {Object} options
+ * @cfg {String} resourceDir
+ * @cfg {FileResourceManager} frm
+ * @cfg {String} diffableRoot
+ */
 module.exports = function requestHandler(options) {
-    var root = options.root,
+    var root = options.resourceDir,
         frm = options.frm,
         diffableRoot = options.diffableRoot;
 
-    return function staticProvider(req, res, next) {
+    return function (req, res, next) {
         if (req.method !== 'GET' && req.method !== 'HEAD') {
             return next();
         }
@@ -38,7 +44,7 @@ module.exports = function requestHandler(options) {
         var filename, url = parseUrl(req.url), hashes, resHash, dicrVerHash,
             targetVerHash;
 
-
+        //Delta request handler
         function onDiffRead(err, diffData) {
             if (err) {
                 return next();
@@ -59,6 +65,7 @@ module.exports = function requestHandler(options) {
             );
         }
 
+        //Version request handler
         function onJsRead(err, versionData) {
             if (err) {
                 return next();
@@ -82,6 +89,7 @@ module.exports = function requestHandler(options) {
             );
         }
 
+        //HTML request handler
         function onHtmlRead(err, data) {
             if (err) {
                 return next(err);
@@ -129,8 +137,7 @@ module.exports = function requestHandler(options) {
                 }(i));
             }
         }
-        
-        
+
         filename = Path.join(root, queryString.unescape(url.pathname));
 
         if (filename[filename.length - 1] === '/') {
@@ -138,7 +145,7 @@ module.exports = function requestHandler(options) {
         }
 
         if (filename.match(/\/diffable\/(.)*\.diff/gi)) {
-            //was it request for delta data
+            //request for delta data
             hashes = filename.split('/').reverse()[0].diffHash.split('_');
             resHash = hashes[0];
             dicrVerHash = hashes[1];
@@ -146,7 +153,7 @@ module.exports = function requestHandler(options) {
             fs.readFile(diffableRoot + '/' + resHash + '/' +
                 dicrVerHash + '_' + targetVerHash + '.diff', onDiffRead);
         } else if (filename.match(/\/diffable\/(.)/gi)) {
-            //was it request for versioned file
+            //request for versioned file
             resHash = filename.split('/').reverse()[0];
             dicrVerHash = frm.getVersionHash(resHash);
             if (dicrVerHash) {
@@ -156,8 +163,10 @@ module.exports = function requestHandler(options) {
                 return next();
             }
         } else if (filename.match(/(.)*\.html/gi)) {
+            //request for html page
             fs.readFile(filename, onHtmlRead);
         } else {
+            //pass through to next middleware
             return next();
         }
         
