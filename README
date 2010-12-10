@@ -1,0 +1,52 @@
+Diffable.
+"Diffable is a method for reducing page load latency by transmitting 
+differential encodings of static files. It works by sending deltas between 
+versions of files that reside in a browser's cache. In web applications, files 
+such as Javascript, HTML, and CSS are often updated every week or more, but 
+change very little between versions. This method significantly reduces the 
+bandwidth and transmission time for these files and is implementable on all 
+legacy browsers that support Javascript."
+How it works and reference Java implementation: http://code.google.com/p/diffable/
+
+Connect-diffable.
+Middleware for Sencha's Connect (http://github.com/senchalabs/connect/) stack 
+that implements algorithm described in previous section.
+
+Example.
+Say we'd like to serve file app.js with diffable.
+
+Simple server that serves static files.
+
+server.js
+var Connect = require('connect'), 
+    diffable = new require('./connect-diffable/diffable'),
+
+    diff = new diffable({
+        'diffableDir' : './diffable',
+        'resourceDir' : './static'
+    });
+
+diff.watch('/js/app.js');
+
+module.exports = Connect.createServer(
+    diff.serve,
+    Connect.staticProvider('./static')
+);
+
+Also we need to change index.html in which we use this secondary resource:
+
+index.html
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>New Web Project</title>
+    </head>
+    <body>
+        <h1>New Web Project Page</h1>
+	{{DIFFABLE res="/js/stuff.js"}}
+    </body>
+</html>
+
+Pattern {{DIFFABLE res="/js/stuff.js"}} will be replaced with javascript that 
+will load appropriate version file, delta if necessary and will eval the source.
