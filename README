@@ -12,6 +12,12 @@ Connect-diffable.
 Middleware for Sencha's Connect (http://github.com/senchalabs/connect/) stack 
 that implements algorithm described in previous section.
 
+Installation.
+git clone git://github.com/plotnikoff/connect-diffable.git
+cd connect-diffable
+git submodule init
+git submodule update 
+
 Example.
 Say we'd like to serve file app.js with diffable.
 
@@ -50,3 +56,5 @@ index.html
 
 Pattern {{DIFFABLE res="/js/stuff.js"}} will be replaced with javascript that 
 will load appropriate version file, delta if necessary and will eval the source.
+
+
