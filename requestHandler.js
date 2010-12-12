@@ -146,10 +146,10 @@ module.exports = function requestHandler(options) {
 
         if (filename.match(/\/diffable\/(.)*\.diff/gi)) {
             //request for delta data
-            hashes = filename.split('/').reverse()[0].diffHash.split('_');
+            hashes = filename.split('/').reverse()[0].split('_');
             resHash = hashes[0];
             dicrVerHash = hashes[1];
-            targetVerHash = hashes[2].split('.');
+            targetVerHash = hashes[2].split('.')[0];
             fs.readFile(diffableRoot + '/' + resHash + '/' +
                 dicrVerHash + '_' + targetVerHash + '.diff', onDiffRead);
         } else if (filename.match(/\/diffable\/(.)/gi)) {
