@@ -25,6 +25,16 @@ function sendForCaching(res, str) {
     res.end(str);
 }
 
+function sendConditional(res) {
+    res.writeHead(304, {
+        "Content-Type": 'text/javascript',
+        "Last-Modified": new Date(2000, 1, 1).toUTCString(),
+        "Expires": new Date().toUTCString(),
+        "Cache-Control": "public, max-age=63072000"
+    });
+    res.end();
+}
+
 /**
  * @param {Object} options
  * @cfg {String} resourceDir
@@ -146,21 +156,32 @@ module.exports = function requestHandler(options) {
 
         if (filename.match(/\/diffable\/(.)*\.diff/gi)) {
             //request for delta data
-            hashes = filename.split('/').reverse()[0].split('_');
-            resHash = hashes[0];
-            dicrVerHash = hashes[1];
-            targetVerHash = hashes[2].split('.')[0];
-            fs.readFile(diffableRoot + '/' + resHash + '/' +
-                dicrVerHash + '_' + targetVerHash + '.diff', onDiffRead);
+            if (!req.headers['if-modified-since']) {
+                hashes = filename.split('/').reverse()[0].split('_');
+                resHash = hashes[0];
+                dicrVerHash = hashes[1];
+                targetVerHash = hashes[2].split('.')[0];
+                fs.readFile(diffableRoot + '/' + resHash + '/' +
+                    dicrVerHash + '_' + targetVerHash + '.diff', onDiffRead);
+            } else {
+                sendConditional(res);
+            }
         } else if (filename.match(/\/diffable\/(.)/gi)) {
             //request for versioned file
-            resHash = filename.split('/').reverse()[0];
-            dicrVerHash = frm.getVersionHash(resHash);
-            if (dicrVerHash) {
-                fs.readFile(diffableRoot + '/' + resHash +
-                    '/' + dicrVerHash + '.version', onJsRead);
+            if (!req.headers['if-modified-since']) {
+                resHash = filename.split('/').reverse()[0];
+                dicrVerHash = frm.getVersionHash(resHash);
+                if (dicrVerHash) {
+                    fs.readFile(diffableRoot + '/' + resHash +
+                    '/' +
+                    dicrVerHash +
+                    '.version', onJsRead);
+                }
+                else {
+                    return next();
+                }
             } else {
-                return next();
+                sendConditional(res);
             }
         } else if (filename.match(/(.)*\.html/gi)) {
             //request for html page
