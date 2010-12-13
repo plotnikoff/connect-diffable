@@ -52,14 +52,15 @@ module.exports = function requestHandler(options) {
         }
 
         var filename, url = parseUrl(req.url), hashes, resHash, dicrVerHash,
-            targetVerHash;
+            targetVerHash, 
+            suffix = process.env.NODE_ENV === 'production' ? '.min' : '';
 
         //Delta request handler
         function onDiffRead(err, diffData) {
             if (err) {
                 return next();
             }
-            fs.readFile(__dirname + '/resources/DeltaBootstrap.js', 
+            fs.readFile(__dirname + '/resources/DeltaBootstrap' + suffix + '.js',
                 function (err, data) {
                     if (err) {
                         throw err;
@@ -80,7 +81,7 @@ module.exports = function requestHandler(options) {
             if (err) {
                 return next();
             }
-            fs.readFile(__dirname + '/resources/JsDictionaryBootstrap.js', 
+            fs.readFile(__dirname + '/resources/JsDictionaryBootstrap' + suffix + '.js', 
                 function (err, data) {
                     if (err) {
                         throw err;
