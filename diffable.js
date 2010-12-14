@@ -30,6 +30,7 @@ module.exports = (function () {
     
     /**
      * Method adds resources that should be served with diffable.
+     * @private
      * @param {String} path Path to resource that should be served by diffable.
      * Path is relative to <code>resourceDir</code>.
      */
@@ -63,13 +64,23 @@ module.exports = (function () {
     /**
      * Connect stack interface, if request contains data that is relevant to 
      * diffable this middleware will serve appropriate version and/or delta files.
-     * @param {Object} req
-     * @param {Object} res
-     * @param {Object} next
+     * @param {String} filename
+     * @param {String} [filename]
      */
-    diffable.prototype.serve = function (req, res, next) {
-        that.provider(req, res, next);
-    };
+    diffable.prototype.serve = function () {
+        var i = 0, len = arguments.length
+        if (len >= 1) {
+            for (; i < len; i += 1) {
+                that.watch(arguments[i]);
+            }
+            return that.provider;
+        } else {
+            console.log('Diffable: There are no files under control')
+            return function (req, res, next) {
+                next();
+            }
+        }
+    }
     
     return diffable;
     
