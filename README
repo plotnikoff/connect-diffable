@@ -18,6 +18,25 @@ cd connect-diffable
 git submodule init
 git submodule update 
 
+Usage.
+require('../connect-diffable/diffable') - Module exports constructor for 
+Diffable.
+
+Constuctor accepts configuration object:
+{
+    'diffableDir' : './diffable',
+    'resourceDir' : './static'
+}
+where 'diffableDir' points to directory where versions and deltas will be kept 
+and 'resourceDir' is directory where static files reside.
+
+serve(fileName...) - method returns middleware function for Connect stack and 
+adds files passed as parameters to diffable control, so when you change static 
+file changes are tracked by middleware and appropriate delta and version files 
+are created. Path is relative to 'resourceDir'
+
+Also it is possible to generate docs by running jsdoc-toolkit on diffable.js
+
 Example.
 Say we'd like to serve file app.js with diffable.
 
@@ -25,19 +44,17 @@ Simple server that serves static files.
 
 server.js
 var Connect = require('connect'), 
-    diffable = new require('./connect-diffable/diffable'),
-
+    diffable = require('../connect-diffable/diffable'), 
     diff = new diffable({
         'diffableDir' : './diffable',
         'resourceDir' : './static'
     });
 
-diff.watch('/js/app.js');
-
 module.exports = Connect.createServer(
-    diff.serve,
+    diff.serve('/js/app.js'),
     Connect.staticProvider('./static')
 );
+
 
 Also we need to change index.html in which we use this secondary resource:
 
@@ -50,11 +67,11 @@ index.html
     </head>
     <body>
         <h1>New Web Project Page</h1>
-	{{DIFFABLE res="/js/stuff.js"}}
+	{{DIFFABLE res="/js/app.js"}}
     </body>
 </html>
 
-Pattern {{DIFFABLE res="/js/stuff.js"}} will be replaced with javascript that 
+Pattern {{DIFFABLE res="/js/app.js"}} will be replaced with javascript that 
 will load appropriate version file, delta if necessary and will eval the source.
-
+Html file can contain references to several diffable controled files.
 

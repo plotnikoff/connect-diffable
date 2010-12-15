@@ -11,11 +11,20 @@ module.exports = (function () {
     
     /**
      * Instantiates diffable object
+     * @class
      * @constructs
-     * @param {Object} config
-     * @cfg {String} diffableDir Directory where delta and version files will 
-     * be stored
-     * @cfg {String} resourceDir Directory where static resources will be stored.
+     * @param {Object} config configuration object
+     * <code>
+     * <pre>
+     *     {
+     *         "diffableDir" : '/path/to/directory'
+     *         "resourceDir" : '/path/to/directory'
+     *     }
+     * </pre>
+     * </code>
+     * <code>diffableDir</code> - directory where delta and version files will 
+     * be stored<br />
+     * <code>resourceDir</code> - directory where diffable can find static files.
      */
     diffable = function (config) {
         this.dir = fs.realpathSync(config.diffableDir);
@@ -62,10 +71,14 @@ module.exports = (function () {
     };
     
     /**
-     * Connect stack interface, if request contains data that is relevant to 
-     * diffable this middleware will serve appropriate version and/or delta files.
-     * @param {String} filename
-     * @param {String} [filename]
+     * Method adds files to diffable control, and returns Connect middleware.
+     * Returns connect stack interface, if request contains data that is 
+     * relevant to diffable this middleware will serve appropriate version 
+     * and/or delta files.
+     * @public
+     * @param {String} filename... varargs names of the files to look for. Paths
+     * are relative to <code>resourceDir</code> in configuration object
+     * @returns {Function}
      */
     diffable.prototype.serve = function () {
         var i = 0, len = arguments.length
