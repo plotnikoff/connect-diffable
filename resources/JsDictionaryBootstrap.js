@@ -16,6 +16,12 @@
 function DJSBootstrap(identifier, code) {
         this.code_ = code;
         this.identifier_ = identifier;
+        if (localStorage) {
+            if (!localStorage["diffable"]) {
+                localStorage["diffable"] = JSON.stringify({});
+            }
+            this.ls_ = JSON.parse(localStorage["diffable"]);
+        }
 }
 
 DJSBootstrap.prototype.bootstrap = function(bootstrap_version,
@@ -48,6 +54,13 @@ DJSBootstrap.prototype.applyAndExecute = function(opt_delta) {
         var output = this.code_;
         if (opt_delta) {
                 output = DJSBootstrap.apply_(this.code_, opt_delta);
+        }
+        if (this.ls_) {
+            this.ls_[this.identifier_] = {
+                'v': window['deltajs'][this.identifier_]['cv'],
+                'c': output
+            }
+            localStorage['diffable'] = JSON.stringify(this.ls_);
         }
         this.globalEval_(output);
 }

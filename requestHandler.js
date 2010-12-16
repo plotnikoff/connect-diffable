@@ -121,14 +121,33 @@ module.exports = function requestHandler(options) {
                     fs.realpath(root + resource, function (err, resolvedPath) {
                         var resHash = frm.getResourceHash(resolvedPath),
                             verHash = frm.getVersionHash(resHash), headers;
-                            
+                        
+                        if (counter === 0) {
+                            script += "<script>if(!window['Diffable']) {window['Diffable'] = {};}" +
+                                "Diffable.loadVersion = function (identifier) {" +
+                                "var script = document.createElement('script');" +
+                                "script.src = '/diffable/' + identifier;" +
+                                "document.getElementsByTagName('head')[0].appendChild(script);}</script>";
+                        }
+                        
                         script += '<script type="text/javascript">' +
                             "if(!window['deltajs']) { window['deltajs'] = {};}" +
                             "window['deltajs']['" + resHash + "']={};" +
                             "window['deltajs']['" + resHash + "']['cv'] = '" + 
-                            verHash + "';" + '</script>' +
-                            '<script type="text/javascript" src="/diffable/' +
-                            resHash + '"></script>';
+                            verHash + "';" +
+                            "(function () {if(!localStorage['diffable']){" +
+                            "Diffable.loadVersion('" + resHash + "');" +
+                            "}else{var ls = JSON.parse(localStorage['diffable']);" +
+                            "if (ls['" + resHash + "'] && ls['" + resHash + "']['v'] === '" + verHash + "') {" +
+                            "if (window.execScript) {" +
+                            "window.execScript(ls['" + resHash + "']['c']);console.log('fromlocalstorage');" +
+                            "} else {" +
+                            "var fn = function() { window.eval.call(window, ls['" + resHash + "']['c']); };" +
+                            "fn();console.log('fromlocalstorage');" +
+                            "}} else {" + 
+                            "Diffable.loadVersion('"+ resHash + "');}}}());" +
+                            "</script>";
+                            
                         strData = strData.replace(matches[counter], script);
                         script = '';
                         counter += 1;
