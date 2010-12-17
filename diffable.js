@@ -32,7 +32,8 @@ module.exports = (function () {
         this.provider = requestHandler({
             'resourceDir': config.resourceDir,
             'frm': frm,
-            'diffableRoot': this.dir
+            'diffableRoot': this.dir,
+            'logger' : config.logger
         });
         that = this;
     };

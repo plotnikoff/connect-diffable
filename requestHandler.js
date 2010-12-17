@@ -1,12 +1,11 @@
 /*jslint nomen:false, regexp:false*/
 
-/*global module, require, __dirname*/
+/*global module, require, __dirname, process*/
 
 var fs = require('fs'),
     Path = require('path'),
     parseUrl = require('url').parse,
     queryString = require('querystring'), that;
-
 /**
  * Function sends response with aggresive caching
  * @param {Object} res
@@ -41,17 +40,18 @@ function sendConditional(res) {
  * @cfg {FileResourceManager} frm
  * @cfg {String} diffableRoot
  */
-module.exports = function requestHandler(options) {
-    var root = options.resourceDir,
-        frm = options.frm,
-        diffableRoot = options.diffableRoot;
+module.exports = function requestHandler(config) {
+    var root = config.resourceDir,
+        frm = config.frm,
+        diffableRoot = config.diffableRoot,
+        log = config.logger ? config.logger : function () {};
 
     return function (req, res, next) {
         if (req.method !== 'GET' && req.method !== 'HEAD') {
             return next();
         }
 
-        var filename, url = parseUrl(req.url), hashes, resHash, dicrVerHash,
+        var filename, url = parseUrl(req.url), hashes, resHash, dictVerHash,
             targetVerHash, 
             suffix = process.env.NODE_ENV === 'production' ? '.min' : '';
 
@@ -70,7 +70,11 @@ module.exports = function requestHandler(options) {
                         resHash);
                     script = script.replace('{{DJS_DIFF_CONTENT}}', 
                         diffData.toString());
-
+                    log({
+                        'type' : 'delta',
+                        'resource' : resHash,
+                        'deltaFile' : dictVerHash + '_' + targetVerHash + '.diff'
+                    });
                     sendForCaching(res, script);
                 }
             );
@@ -92,9 +96,14 @@ module.exports = function requestHandler(options) {
                     script = script.replace('{{DJS_CODE}}', 
                         JSON.stringify(versionData.toString()));
                     script = script.replace('{{DJS_BOOTSTRAP_VERSION}}', 
-                        dicrVerHash);
+                        dictVerHash);
                     script = script.replace('{{DJS_DIFF_URL}}', 
                         '/diffable/' + resHash + '/');
+                    log({
+                        'type' : 'version',
+                        'resource' : resHash,
+                        'versionFile' : dictVerHash + '.version'
+                    });
                     sendForCaching(res, script);
                 }
             );
@@ -158,7 +167,10 @@ module.exports = function requestHandler(options) {
                                 "Cache-Control": "private, max-age=0",
                                 "Expires": "-1"
                             };
-
+                            log({
+                                'type' : 'html',
+                                'resource' : resHash
+                            });
                             res.writeHead(200, headers);
                             res.end(strData);
                         }
@@ -179,10 +191,10 @@ module.exports = function requestHandler(options) {
             if (!req.headers['if-modified-since']) {
                 hashes = filename.split('/').reverse()[0].split('_');
                 resHash = hashes[0];
-                dicrVerHash = hashes[1];
+                dictVerHash = hashes[1];
                 targetVerHash = hashes[2].split('.')[0];
                 fs.readFile(diffableRoot + '/' + resHash + '/' +
-                    dicrVerHash + '_' + targetVerHash + '.diff', onDiffRead);
+                    dictVerHash + '_' + targetVerHash + '.diff', onDiffRead);
             } else {
                 sendConditional(res);
             }
@@ -190,11 +202,11 @@ module.exports = function requestHandler(options) {
             //request for versioned file
             if (!req.headers['if-modified-since']) {
                 resHash = filename.split('/').reverse()[0];
-                dicrVerHash = frm.getVersionHash(resHash);
-                if (dicrVerHash) {
+                dictVerHash = frm.getVersionHash(resHash);
+                if (dictVerHash) {
                     fs.readFile(diffableRoot + '/' + resHash +
                     '/' +
-                    dicrVerHash +
+                    dictVerHash +
                     '.version', onJsRead);
                 }
                 else {
