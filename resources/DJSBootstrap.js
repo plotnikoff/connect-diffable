@@ -93,7 +93,13 @@ DJSBootstrap.checkStorage = function (resHash, verHash) {
         var ls = JSON.parse(localStorage['diffable']);
         if (ls[resHash] && ls[resHash]['v'] === verHash) {
             if (window.execScript) {
-                window.execScript(ls[resHash]['c']);
+                //Means not immediately, looks like Chrome evals the code 
+                //faster then it renders DOM tree occasionally causing endless 
+                //recursoin even if the script is in the bottom of the page. 
+                //Also it's weak assumption as long as on slow PC this pattern 
+                //can be broken
+                //There's should be another workaround...
+                setTimeout(window.execScript, 2, ls[resHash]['c']);
             }
             else {
                 var fn = function(){
