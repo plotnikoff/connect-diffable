@@ -44,16 +44,18 @@ module.exports = function requestHandler(config) {
     var root = config.resourceDir,
         frm = config.frm,
         diffableRoot = config.diffableRoot,
-        log = config.logger ? config.logger : function () {};
-
+        log = config.logger ? config.logger : function () {},
+        suffix = process.env.NODE_ENV === 'production' ? '.min' : '',
+        bootScript = fs.readFileSync(__dirname +
+            '/resources/DJSBootstrap' + suffix + '.js', 'utf8');
+    
     return function (req, res, next) {
         if (req.method !== 'GET' && req.method !== 'HEAD') {
             return next();
         }
 
         var filename, url = parseUrl(req.url), hashes, resHash, dictVerHash,
-            targetVerHash, 
-            suffix = process.env.NODE_ENV === 'production' ? '.min' : '';
+            targetVerHash;
 
         //Delta request handler
         function onDiffRead(err, diffData) {
@@ -132,11 +134,7 @@ module.exports = function requestHandler(config) {
                             verHash = frm.getVersionHash(resHash), headers;
                         
                         if (counter === 0) {
-                            script += "<script>if(!window['Diffable']) {window['Diffable'] = {};}" +
-                                "Diffable.loadVersion = function (identifier) {" +
-                                "var script = document.createElement('script');" +
-                                "script.src = '/diffable/' + identifier;" +
-                                "document.getElementsByTagName('head')[0].appendChild(script);}</script>";
+                            script += "<script>" + bootScript + "</script>";
                         }
                         
                         script += '<script type="text/javascript">' +
@@ -144,19 +142,8 @@ module.exports = function requestHandler(config) {
                             "window['deltajs']['" + resHash + "']={};" +
                             "window['deltajs']['" + resHash + "']['cv'] = '" + 
                             verHash + "';" +
-                            "(function () {if(!localStorage['diffable']){" +
-                            "Diffable.loadVersion('" + resHash + "');" +
-                            "}else{var ls = JSON.parse(localStorage['diffable']);" +
-                            "if (ls['" + resHash + "'] && ls['" + resHash + "']['v'] === '" + verHash + "') {" +
-                            "if (window.execScript) {" +
-                            "window.execScript(ls['" + resHash + "']['c']);console.log('fromlocalstorage');" +
-                            "} else {" +
-                            "var fn = function() { window.eval.call(window, ls['" + resHash + "']['c']); };" +
-                            "fn();console.log('fromlocalstorage');" +
-                            "}} else {" + 
-                            "Diffable.loadVersion('"+ resHash + "');}}}());" +
+                            "DJSBootstrap.checkStorage('" + resHash + "','" + verHash + "');" +
                             "</script>";
-                            
                         strData = strData.replace(matches[counter], script);
                         script = '';
                         counter += 1;
