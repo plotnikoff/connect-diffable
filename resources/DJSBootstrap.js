@@ -63,7 +63,7 @@ DJSBootstrap.prototype.applyAndExecute = function(opt_delta) {
             }
             localStorage['diffable'] = JSON.stringify(this.ls_);
         }
-        this.globalEval_(output);
+        DJSBootstrap.globalEval(output);
 };
 
 DJSBootstrap.apply_ = function(dict, diff) {
@@ -80,6 +80,24 @@ DJSBootstrap.apply_ = function(dict, diff) {
         return output.join('');
 };
 
+DJSBootstrap.globalEval = function (src) {
+    var fn;
+    if (window.execScript) {
+        fn = function(){
+            window.execScript(src);
+        }
+    } else {
+        fn = function() {
+            window.eval.call(window, src);
+        };
+    }
+    if (window.addEventListener) {
+        window.addEventListener('load', fn, false);
+    } else if (window.attachEvent) {
+        window.attachEvent('onload', fn);
+    }
+};
+
 DJSBootstrap.loadVersion = function (identifier) {
     var script = document.createElement('script');
     script.src = '/diffable/' + identifier;
@@ -92,21 +110,7 @@ DJSBootstrap.checkStorage = function (resHash, verHash) {
     } else {
         var ls = JSON.parse(localStorage['diffable']);
         if (ls[resHash] && ls[resHash]['v'] === verHash) {
-            if (window.execScript) {
-                //Means not immediately, looks like Chrome evals the code 
-                //faster then it renders DOM tree occasionally causing endless 
-                //recursoin even if the script is in the bottom of the page. 
-                //Also it's weak assumption as long as on slow PC this pattern 
-                //can be broken
-                //There's should be another workaround...
-                setTimeout(window.execScript, 2, ls[resHash]['c']);
-            }
-            else {
-                var fn = function(){
-                    window.eval.call(window, ls[resHash]['c']);
-                };
-                fn();
-            }
+            DJSBootstrap.globalEval(ls[resHash]['c']);
         }
         else {
             DJSBootstrap.loadVersion(resHash);
