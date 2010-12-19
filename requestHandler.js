@@ -47,7 +47,11 @@ module.exports = function requestHandler(config) {
         log = config.logger ? config.logger : function () {},
         suffix = process.env.NODE_ENV === 'production' ? '.min' : '',
         bootScript = fs.readFileSync(__dirname +
-            '/resources/DJSBootstrap' + suffix + '.js', 'utf8');
+            '/resources/DJSBootstrap' + suffix + '.js', 'utf8'),
+        deltaScript = fs.readFileSync(__dirname +
+            '/resources/DeltaBootstrap' + suffix + '.js', 'utf8'),
+        versionScript = fs.readFileSync(__dirname +
+            '/resources/JsDictionaryBootstrap' + suffix + '.js', 'utf8');
     
     return function (req, res, next) {
         if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -62,24 +66,16 @@ module.exports = function requestHandler(config) {
             if (err) {
                 return next();
             }
-            fs.readFile(__dirname + '/resources/DeltaBootstrap' + suffix + '.js',
-                function (err, data) {
-                    if (err) {
-                        throw err;
-                    }
-                    var script = data.toString();
-                    script = script.replace('{{DJS_RESOURCE_IDENTIFIER}}', 
-                        resHash);
-                    script = script.replace('{{DJS_DIFF_CONTENT}}', 
-                        diffData.toString());
-                    log({
-                        'type' : 'delta',
-                        'resource' : resHash,
-                        'deltaFile' : dictVerHash + '_' + targetVerHash + '.diff'
-                    });
-                    sendForCaching(res, script);
-                }
-            );
+            var script = deltaScript;
+            script = script.replace('{{DJS_RESOURCE_IDENTIFIER}}', 
+                resHash);
+            script = script.replace('{{DJS_DIFF_CONTENT}}', diffData.toString());
+            log({
+                'type' : 'delta',
+                'resource' : resHash,
+                'deltaFile' : dictVerHash + '_' + targetVerHash + '.diff'
+            });
+            sendForCaching(res, script);
         }
 
         //Version request handler
@@ -87,28 +83,19 @@ module.exports = function requestHandler(config) {
             if (err) {
                 return next();
             }
-            fs.readFile(__dirname + '/resources/JsDictionaryBootstrap' + suffix + '.js', 
-                function (err, data) {
-                    if (err) {
-                        throw err;
-                    }
-                    var script = data.toString();
-                    script = script.replace('{{DJS_RESOURCE_IDENTIFIER}}', 
-                        resHash);
-                    script = script.replace('{{DJS_CODE}}', 
-                        JSON.stringify(versionData.toString()));
-                    script = script.replace('{{DJS_BOOTSTRAP_VERSION}}', 
-                        dictVerHash);
-                    script = script.replace('{{DJS_DIFF_URL}}', 
-                        '/diffable/' + resHash + '/');
-                    log({
-                        'type' : 'version',
-                        'resource' : resHash,
-                        'versionFile' : dictVerHash + '.version'
-                    });
-                    sendForCaching(res, script);
-                }
-            );
+            var script = versionScript;
+            script = script.replace('{{DJS_RESOURCE_IDENTIFIER}}', resHash);
+            script = script.replace('{{DJS_CODE}}', 
+                JSON.stringify(versionData.toString()));
+            script = script.replace('{{DJS_BOOTSTRAP_VERSION}}', dictVerHash);
+            script = script.replace('{{DJS_DIFF_URL}}', 
+                '/diffable/' + resHash + '/');
+            log({
+                'type' : 'version',
+                'resource' : resHash,
+                'versionFile' : dictVerHash + '.version'
+            });
+            sendForCaching(res, script);
         }
 
         //HTML request handler
