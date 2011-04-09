@@ -42,15 +42,6 @@ DJSBootstrap.prototype.bootstrap = function(bootstrap_version,
         }
 };
 
-DJSBootstrap.prototype.globalEval_ = function(source) {
-        if (window.execScript) {
-                window.execScript(source);
-        } else {
-                var fn = function() { window.eval.call(window, source); };
-                fn();
-        }
-};
-
 DJSBootstrap.prototype.applyAndExecute = function(opt_delta) {
         var output = this.code_;
         if (opt_delta) {
@@ -80,23 +71,25 @@ DJSBootstrap.apply_ = function(dict, diff) {
         return output.join('');
 };
 
-DJSBootstrap.globalEval = function (src) {
-    var fn;
-    if (window.execScript) {
-        fn = function(){
-            window.execScript(src);
+DJSBootstrap.globalEval = (function() {
+    var isIndirectEvalGlobal = (function (original, Object) {
+        try {
+            return (1, eval)('Object') === original;
+        } catch(err) {
+            return false;
         }
-    } else {
-        fn = function() {
-            window.eval.call(window, src);
+    }(Object, 123));
+
+    if (isIndirectEvalGlobal) {
+        return function(expression) {
+            return (1,eval)(expression);
+        };
+    } else if (typeof window.execScript !== 'undefined') {
+        return function(expression) {
+            return window.execScript(expression);
         };
     }
-    if (window.addEventListener) {
-        window.addEventListener('load', fn, false);
-    } else if (window.attachEvent) {
-        window.attachEvent('onload', fn);
-    }
-};
+}());
 
 DJSBootstrap.loadVersion = function (identifier) {
     var script = document.createElement('script');
@@ -111,8 +104,7 @@ DJSBootstrap.checkStorage = function (resHash, verHash) {
         var ls = JSON.parse(localStorage['diffable']);
         if (ls[resHash] && ls[resHash]['v'] === verHash) {
             DJSBootstrap.globalEval(ls[resHash]['c']);
-        }
-        else {
+        } else {
             DJSBootstrap.loadVersion(resHash);
         }
     }
